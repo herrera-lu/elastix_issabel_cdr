@@ -61,13 +61,14 @@ ELSEIF NEW.outbound_cnum <> '' THEN
 ELSEIF NEW.custom_callerid <> '' THEN
 	SET NEW.custom_origen = NEW.custom_callerid;
 	SET NEW.custom_desti = NEW.dst;
-IF NEW.custom_callerid <> NEW.src THEN
 	SET NEW.custom_origen_trans = NEW.src;
-END IF;
 ELSE
 	SET NEW.custom_origen = NEW.src;
 	SET NEW.custom_desti = NEW.dst;	
 END IF;
+IF NEW.custom_callerid = NEW.src THEN
+	SET NEW.custom_origen_trans = '';
+END IF;	
 END;//
 DELIMITER ;
 
