@@ -69,7 +69,11 @@ ELSE
 END IF;
 IF NEW.custom_callerid = NEW.src THEN
 	SET NEW.custom_origen_trans = '';
-END IF;	
+END IF;
+IF LENGTH(NEW.custom_origen) < 4 AND (NEW.custom_desti = 's' OR SUBSTRING(NEW.custom_desti, 1, 1) = '*') THEN
+	SET NEW.custom_origen = 'NP';
+	SET NEW.custom_desti = 'NP';
+END IF;
 END;//
 DELIMITER ;
 
