@@ -1,0 +1,71 @@
+# Ens connectem a la base de dades mysql:
+mysql -u root -p
+
+# Escollim la base de dades amb la que treballar:
+use asteriskcdrdb;
+
+# Creem un usuari:
+CREATE USER 'newuser'@'%' IDENTIFIED BY 'user_password';
+
+# En el cas d'Elastix 2.5, haurem de modificar la contrasenya per
+# evitar errors en la connexió (malformed packet):
+set session old_passwords=0; set password for 'newuser'@'%' = password('mypassword');
+
+# Li proporcionem permís de només lectura (SELECT) a la base de dades del cdr:
+GRANT SELECT asteriskcdrdb.* TO 'newuser'@'%';
+
+# Creem tots els camps que farem servir per controlar les trucades:
+ALTER TABLE cdr ADD COLUMN custom_callerid VARCHAR(80) NOT NULL DEFAULT "";
+ALTER TABLE cdr ADD COLUMN custom_origen VARCHAR(80) NOT NULL DEFAULT "";
+ALTER TABLE cdr ADD COLUMN custom_desti VARCHAR(80) NOT NULL DEFAULT "";
+ALTER TABLE cdr ADD COLUMN custom_origen_trans VARCHAR(80) NOT NULL DEFAULT "";
+ALTER TABLE cdr ADD COLUMN custom_digit VARCHAR(2) NOT NULL DEFAULT "";
+
+# Modifiquem extensions_override_elastix.conf per tal d'afegir la info necessaria
+# per emmagatzemar l'identificador de la persona que truca, fins i tot quan ha
+# estat transferida
+vi /etc/asterisk/extensions_override_elastix.conf
+
+# I afegim:
+; La següent línia permet en registrar el telèfon de la persona que truca quan
+; una trucada externa es transfereix d'un telèfon a un altre
+exten => s,n,Set(CDR(custom_callerid)=${CALLERID(num)})
+
+# després de: exten => s,n(endmixmoncheck),Noop(End of MIXMON check)
+# a la secció [macro-hangupcall]
+
+# Un cop fet això, hem de fer que asterisk s'assabenti dels canvis amb les següents instruccions:
+module cdr_mysql.so unload
+module cdr_mysql.so load
+dialplan reload
+
+
+# Finalment, només ens cal crear el trigger que permeti emmagatzemar els camps:
+# (obtinguts a partir d'altra info que ja hi ha a la bd)
+# custom_origen
+# custom_desti
+# custom_origen_trans
+# custom_digit
+
+DELIMITER //
+CREATE TRIGGER dades_trucada BEFORE INSERT ON cdr 
+FOR EACH ROW
+BEGIN
+IF NEW.dcontext = 'ext-group' THEN
+	SET NEW.custom_origen = NEW.src;
+	SET NEW.custom_desti =  SUBSTRING(NEW.dstchannel, 5, 2);
+ELSEIF NEW.outbound_cnum <> '' THEN
+	SET NEW.custom_origen = NEW.src;
+	SET NEW.custom_desti = SUBSTRING(NEW.dst, 2);
+	SET NEW.custom_digit = SUBSTRING(NEW.dst, 1, 1);
+ELSEIF NEW.custom_callerid <> '' THEN
+	SET NEW.custom_origen = NEW.custom_callerid;
+	SET NEW.custom_desti = NEW.dst;
+	SET NEW.custom_origen_trans = NEW.src;
+ELSE
+	SET NEW.custom_origen = NEW.src;
+	SET NEW.custom_desti = NEW.dst;	
+END IF;
+END;//
+DELIMITER ;
+
