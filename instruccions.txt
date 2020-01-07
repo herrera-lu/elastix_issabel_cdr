@@ -47,13 +47,14 @@ dialplan reload
 # custom_origen_trans
 # custom_digit
 
+
 DELIMITER //
 CREATE TRIGGER dades_trucada BEFORE INSERT ON cdr 
 FOR EACH ROW
 BEGIN
 IF NEW.dcontext = 'ext-group' THEN
 	SET NEW.custom_origen = NEW.src;
-	SET NEW.custom_desti =  SUBSTRING(NEW.dstchannel, 5, 2);
+	SET NEW.custom_desti =  SUBSTRING(NEW.dstchannel, POSITION("/" IN NEW.dstchannel) + 1, POSITION("-" IN NEW.dstchannel) - POSITION("/" IN NEW.dstchannel) - 1);
 ELSEIF NEW.outbound_cnum <> '' THEN
 	SET NEW.custom_origen = NEW.src;
 	SET NEW.custom_desti = SUBSTRING(NEW.dst, 2);
@@ -71,4 +72,28 @@ IF NEW.custom_callerid = NEW.src THEN
 END IF;	
 END;//
 DELIMITER ;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
