@@ -21,6 +21,13 @@ ALTER TABLE cdr ADD COLUMN custom_desti VARCHAR(80) NOT NULL DEFAULT "";
 ALTER TABLE cdr ADD COLUMN custom_origen_trans VARCHAR(80) NOT NULL DEFAULT "";
 ALTER TABLE cdr ADD COLUMN custom_digit VARCHAR(2) NOT NULL DEFAULT "";
 
+# Creem indexos per millorar la velocitat de les consultes:
+CREATE INDEX idx_custom_origen ON cdr (custom_origen);
+CREATE INDEX idx_custom_desti ON cdr (custom_desti);
+CREATE INDEX idx_custom_origen_trans ON cdr (custom_origen_trans);
+CREATE INDEX idx_custom_digit ON cdr (custom_digit);
+CREATE INDEX idx_calldate ON cdr (calldate);
+
 # Modifiquem extensions_override_elastix.conf per tal d'afegir la info necessaria
 # per emmagatzemar l'identificador de la persona que truca, fins i tot quan ha
 # estat transferida
