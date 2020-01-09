@@ -12,7 +12,7 @@ CREATE USER 'newuser'@'%' IDENTIFIED BY 'user_password';
 set session old_passwords=0; set password for 'newuser'@'%' = password('mypassword');
 
 # Li proporcionem permís de només lectura (SELECT) a la base de dades del cdr:
-GRANT SELECT asteriskcdrdb.* TO 'newuser'@'%';
+GRANT SELECT ON asteriskcdrdb.* TO 'newuser'@'%';
 
 # Creem tots els camps que farem servir per controlar les trucades:
 ALTER TABLE cdr ADD COLUMN custom_callerid VARCHAR(80) NOT NULL DEFAULT "";
